@@ -38,16 +38,29 @@ python mnist_float.py
 
 ### Quantization-Aware Training (QAT)
 
-8-bit  QAT example:
-
 ```bash
 cd QAT
 ```
+
+#### 8-bit  QAT example:
 
 ```bash
 python mnist_8bit.py
 ```
 
-### Contributing
+#### 4-bit  QAT example:
+
+```bash
+python mnist_8bit.py
+```
+
+## Test quantized model
+
+```bash
+python test_quantized_model.py
+```
+
+
+## Contributing
 
 Contributions Welcome! Please open an issue or submit a pull request for any improvements or additions.
