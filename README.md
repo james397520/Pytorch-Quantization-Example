@@ -14,6 +14,9 @@ Clone this repository to your local machine:
 
 ```bash
 git clone git@github.com:james397520/Pytorch-Quantization-Example.git
+```
+
+```bash
 cd Pytorch-Quantization-Example
 ```
 
@@ -39,6 +42,9 @@ python mnist_float.py
 
 ```bash
 cd QAT
+```
+
+```bash
 python mnist_8bit.py
 ```
 
