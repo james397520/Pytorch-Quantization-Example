@@ -22,7 +22,7 @@ class Net(nn.Module):
         x = F.relu(self.conv4(x))
         x = x.view(-1, 32*1*1)
         x = self.fc1(x)
-        x = F.log_softmax(x, dim=1)
+
         return x
 
 def train_and_test(model, train_loader, test_loader, optimizer, device, epochs):

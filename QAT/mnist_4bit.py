@@ -2,14 +2,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torch.quantization import QuantStub, DeQuantStub
 from torch.quantization import get_default_qconfig, quantize_qat
 from torch.ao.quantization.quantize import quantize, prepare_qat, convert
-
+from torch.quantization import get_default_qconfig, QConfig
+from torch.quantization.quantize import prepare_qat
+from torch.quantization.fake_quantize import FakeQuantize
+from torch.quantization.observer import MovingAverageMinMaxObserver
 
 # Define the model
 # 定義模型
@@ -110,12 +112,28 @@ if __name__ == '__main__':
     # 'fbgemm' 適用於 x86 架構, 'qnnpack' 適用於 ARM
     model.qconfig = get_default_qconfig('fbgemm') 
 
+    # 定义自定义的量化配置
+    custom_qconfig = QConfig(
+        activation=FakeQuantize.with_args(observer=MovingAverageMinMaxObserver,
+                                        quant_min=0,
+                                        quant_max=15,  # 4-bit 量化的范围
+                                        dtype=torch.quint8),  # 注意: 目前 PyTorch 不直接支持 4-bit 的 dtype, 这里仅作为示例
+        weight=FakeQuantize.with_args(observer=MovingAverageMinMaxObserver,
+                                    quant_min=-8,
+                                    quant_max=7,
+                                    dtype=torch.qint8)
+    )
+
+    # 将自定义的量化配置应用于模型
+    model.qconfig = custom_qconfig
+
+
     model = torch.quantization.fuse_modules(model, [['conv1', 'relu1'],
                                                     ['conv2', 'relu2'],
                                                     ['conv3', 'relu3'],
                                                     ['conv4', 'relu4']])
 
-    model = torch.quantization.prepare_qat(model, inplace=True)
+    model = prepare_qat(model, inplace=True)
 
 
     # Quantization-aware training
@@ -152,9 +170,11 @@ if __name__ == '__main__':
         100 * correct / total))
     
     # Save the quantized model
-    quantized_model_path = '../model/8bit/checkpoint_quantized.pt'
+    quantized_model_path = '../model/4bit/checkpoint_quantized.pt'
     
     scripted_quantized_model = torch.jit.script(model_8bit)
     # save as TorchScript
     scripted_quantized_model.save(quantized_model_path)
     print(f'Quantized model saved to {quantized_model_path}')
+
+
