@@ -45,6 +45,9 @@ class Net(nn.Module):
     
 
 if __name__ == '__main__':
+    # Check for CUDA
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f'Using device: {device}')
 
     # Data loading
     # 數據加載
@@ -61,18 +64,19 @@ if __name__ == '__main__':
     # Load the pre-trained floating-point model
     # 加载遇訓練的浮點數模型
     float_model_path = '../model/float/checkpoint_10.pth'
-    model = Net()
+    model = Net().to(device)
     if float_model_path:
-        model.load_state_dict(torch.load(float_model_path))
+        model.load_state_dict(torch.load(float_model_path, map_location=device))
 
     # Train the model
     # 訓練模型
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.5)
     criterion = nn.CrossEntropyLoss()
 
-    for epoch in range(5):
+    for epoch in range(10):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
             loss = criterion(output, target)
@@ -89,6 +93,7 @@ if __name__ == '__main__':
     total = 0
     with torch.no_grad():
         for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
             output = model(data)
             _, predicted = torch.max(output, 1)
             total += target.size(0)
@@ -115,8 +120,9 @@ if __name__ == '__main__':
 
     # Quantization-aware training
     # 量化訓練
-    for epoch in range(1):
+    for epoch in range(10):
         for batch_idx, (data, target) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
             loss = criterion(output, target)
@@ -129,10 +135,37 @@ if __name__ == '__main__':
 
     # 完成量化訓練後，將模型轉為量化模型
     model.eval()
-    model_int8 = torch.quantization.convert(model)
+    model_int8 = torch.quantization.convert(model.to('cpu'))
 
 
     # 測試量化模型
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data, target in test_loader:
+            output = model_int8(data)
+            _, predicted = torch.max(output, 1)
+            total += target.size(0)
+            correct += (predicted == target).sum().item()
+
+    print('Accuracy of the quantized model on the test images: {:.2f}%'.format(
+        100 * correct / total))
+    
+    # Save the quantized model
+    quantized_model_path = '../model/int8/checkpoint_quantized.pt'
+    
+    scripted_quantized_model = torch.jit.script(model_int8)
+    # save as TorchScript
+    scripted_quantized_model.save(quantized_model_path)
+    print(f'Quantized model saved to {quantized_model_path}')
+
+
+    # load TorchScript model
+    print("Load TorchScript model...")
+    model = torch.jit.load(quantized_model_path, map_location='cpu')
+
+
+    print("Test quantized model...")
     correct = 0
     total = 0
     with torch.no_grad():
