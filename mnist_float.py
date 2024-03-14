@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 
-# 定義模型
+# Define the model
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -28,7 +28,7 @@ class Net(nn.Module):
 def train_and_test(model, train_loader, test_loader, optimizer, device, epochs):
     model.to(device)
     
-    # 訓練
+    # training
     for epoch in range(1, epochs + 1):
         train(model, device, train_loader, optimizer, epoch)
         accuracy = test(model, device, test_loader)
@@ -59,6 +59,7 @@ def test(model, device, test_loader):
 if __name__ == '__main__':
     saved_model_dir = 'model/float/'
     # 資料準備
+    # Data loading
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
