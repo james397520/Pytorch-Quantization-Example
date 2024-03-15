@@ -75,7 +75,7 @@ if __name__ == '__main__':
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.5)
     criterion = nn.CrossEntropyLoss()
 
-    for epoch in range(1):
+    for epoch in range(10):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     # Quantization-aware training
     # 量化訓練
-    for epoch in range(1):
+    for epoch in range(10):
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     # 完成量化訓練後，將模型轉為量化模型
     model.eval()
-    model_8bit = torch.quantization.convert(model.to('cpu'))
+    model_4bit = torch.quantization.convert(model.to('cpu'))
 
 
     # 測試量化模型
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     total = 0
     with torch.no_grad():
         for data, target in test_loader:
-            output = model_8bit(data)
+            output = model_4bit(data)
             _, predicted = torch.max(output, 1)
             total += target.size(0)
             correct += (predicted == target).sum().item()
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     # Save the quantized model
     quantized_model_path = '../model/4bit/checkpoint_quantized.pt'
     
-    scripted_quantized_model = torch.jit.script(model_8bit)
+    scripted_quantized_model = torch.jit.script(model_4bit)
     # save as TorchScript
     scripted_quantized_model.save(quantized_model_path)
     print(f'Quantized model saved to {quantized_model_path}')
