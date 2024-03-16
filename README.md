@@ -51,7 +51,7 @@ python mnist_8bit.py
 #### 4-bit  QAT example:
 
 ```bash
-python mnist_8bit.py
+python mnist_4bit.py
 ```
 
 ## Test quantized model
